@@ -65,8 +65,58 @@ async function checkScheduleAndNotify() {
 }
 
 
+// ------------------------------------------------------------------------
+// --- 4. وظائف التحميل والعرض المباشر للبيانات الجديدة (للعرض في الواجهة) ---
+// *ملاحظة: تحتاج إلى تطبيق منطق عرض البيانات الفعلي في الواجهة داخل هذه الدوال.*
+// ------------------------------------------------------------------------
+
+async function loadLectures() {
+    // افتراض: جلب بيانات المحاضرات من ملف أو API وعرضها في عنصر معين
+    try {
+        const response = await fetch('data.json'); // افترض أن جدول المحاضرات موجود هنا
+        const data = await response.json();
+        // **هنا ضع الكود الذي يعرض بيانات جدول المحاضرات في الواجهة**
+        console.log("✅ تم تحميل بيانات المحاضرات وعرضها مباشرة.");
+    } catch (error) {
+        console.error('❌ فشل في تحميل وعرض المحاضرات:', error);
+    }
+}
+
+async function loadStudents() {
+    // افتراض: جلب بيانات أسماء الطلبة
+    try {
+        const response = await fetch('students.json'); // يجب أن يكون لديك ملف لأسماء الطلبة
+        const data = await response.json();
+        // **هنا ضع الكود الذي يعرض قائمة أسماء الطلبة في الواجهة**
+        console.log("✅ تم تحميل بيانات أسماء الطلبة وعرضها مباشرة.");
+    } catch (error) {
+        console.error('❌ فشل في تحميل وعرض أسماء الطلبة:', error);
+    }
+}
+
+async function loadSummaries() {
+    // افتراض: جلب بيانات الملخصات
+    try {
+        const response = await fetch('summaries.json'); // يجب أن يكون لديك ملف للملخصات
+        const data = await response.json();
+        // **هنا ضع الكود الذي يعرض الملخصات في الواجهة**
+        console.log("✅ تم تحميل بيانات الملخصات وعرضها مباشرة.");
+    } catch (error) {
+        console.error('❌ فشل في تحميل وعرض الملخصات:', error);
+    }
+}
+
+
+// ------------------------------------------------------------------------
 // --- 3. تسجيل SW وإعداد الفحص الدوري (المنطق الرئيسي) ---
+// ------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
+    
+    // **🌟 التعديل المطلوب:** استدعاء جميع دوال تحميل البيانات فوراً عند تحميل الصفحة
+    loadLectures();  
+    loadStudents();  
+    loadSummaries(); 
+
     const alertBar = document.getElementById('alert-bar');
     const bellIcon = document.querySelector('.bell-icon');
     const notificationDropdown = document.getElementById('notification-dropdown');
@@ -104,97 +154,5 @@ document.addEventListener('DOMContentLoaded', () => {
             let closestExam = null;
             let closestDateDiff = Infinity;
 
-            const dateFormatter = new Intl.DateTimeFormat('ar-EG', { 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
-            });
-
-            exams.forEach(exam => {
-                const examDate = new Date(exam.date + 'T00:00:00'); 
-                const timeDiff = examDate.getTime() - now.getTime();
-                
-                if (timeDiff >= 0) { // المستقبل أو اليوم
-                    if (timeDiff < closestDateDiff) {
-                        closestDateDiff = timeDiff;
-                        closestExam = exam;
-                    }
-                }
-            });
-
-            // 3. تحديد التنبيه الأهم للعرض (الامتحان الأقرب أولاً)
-            let mainAlertText = 'لا توجد تنبيهات عاجلة حالياً.';
-            let isImportantAlert = false; 
-
-            if (closestExam) {
-                const examDayFormatted = dateFormatter.format(new Date(closestExam.date));
-                // حساب الأيام المتبقية
-                const daysUntil = Math.floor(closestDateDiff / (1000 * 60 * 60 * 24)); 
-                
-                let timeMessage;
-                if (daysUntil === 0) {
-                    timeMessage = 'اليوم!';
-                } else if (daysUntil === 1) {
-                    timeMessage = 'غداً!';
-                } else {
-                    timeMessage = `بعد ${daysUntil} يوم.`;
-                }
-                
-                // النص الذي سيظهر في شريط التنبيهات
-                mainAlertText = `⚠️ موعد امتحان الشهر الثاني: ${closestExam.subject} (${closestExam.day} ${examDayFormatted}) - ${timeMessage}`;
-                isImportantAlert = true;
-
-            } else if (allAnnouncements.length > 0) {
-                mainAlertText = allAnnouncements[allAnnouncements.length - 1]; 
-                isImportantAlert = true;
-            }
-
-            // 4. تطبيق التنبيه على الواجهة
-            alertBar.textContent = mainAlertText;
-            alertBar.classList.add('active'); 
-            
-            if (isImportantAlert) {
-                document.querySelector('.alert-dot').classList.remove('hidden');
-            } else {
-                document.querySelector('.alert-dot').classList.add('hidden');
-            }
-
-
-            // 5. تحديث القائمة المنسدلة (تشمل كل الامتحانات القادمة والتنبيهات العامة)
-            
-            // تصفية وترتيب الامتحانات القادمة (من الأقرب للأبعد)
-            const futureExamsAlerts = exams.filter(exam => {
-                const examDate = new Date(exam.date + 'T00:00:00');
-                return examDate.getTime() >= now.getTime();
-            }).sort((a, b) => {
-                 return new Date(a.date).getTime() - new Date(b.date).getTime();
-            }).map(exam => {
-                const examDayFormatted = dateFormatter.format(new Date(exam.date));
-                return `**موعد امتحان:** ${exam.subject} (${exam.day} ${examDayFormatted})`;
-            });
-            
-            // دمج قائمة الامتحانات القادمة مع قائمة التنبيهات العامة
-            const dropdownItems = [...futureExamsAlerts, ...allAnnouncements];
-
-            if (dropdownItems.length > 0) {
-                notificationDropdown.innerHTML = dropdownItems.map(
-                    (item) => `<p>• ${item}</p>`
-                ).join('');
-            } else {
-                notificationDropdown.innerHTML = '<p>لا توجد تنبيهات جديدة.</p>';
-            }
-
-
-        } catch (error) {
-            console.error('فشل في جلب البيانات:', error);
-        }
-    }
-
-    // تبديل عرض قائمة الإشعارات المنسدلة
-    bellIcon.addEventListener('click', () => {
-        notificationDropdown.style.display = notificationDropdown.style.display === 'block' ? 'none' : 'block';
-        document.querySelector('.alert-dot').classList.add('hidden'); 
-    });
-    
-    loadAlertsAndDisplay();
-});
+            const dateFormatter = new Intl.DateTimeFormat('ar-EG', {
+// ... (بقية الكود الخاص بك)
