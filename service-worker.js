@@ -1,36 +1,73 @@
-const CACHE_NAME = 'history-app-cache-v1';
+// --- Service Worker لإدارة الكاش والإشعارات ---
+
+const CACHE_NAME = 'Mustansiriyah-App-Cache-v1';
 const urlsToCache = [
     '/',
-    'index.html',
-    'style.css',
-    'app.js',
-    'data.json', // مهم لحفظ بيانات الجدول والتنبيهات محلياً
-    'manifest.json',
-    // يجب إضافة باقي الملفات مثل schedule.html و student.html و icon-xxx.png
+    '/index.html',
+    '/style.css',
+    '/admin.js',
+    '/data.json',
+    '/manifest.json',
+    '/192x192.png', 
+    '/512x512.png'
 ];
 
-// تثبيت Service Worker وحفظ الموارد
-self.addEventListener('install', event => {
+// التثبيت: يتم تخزين الملفات في الكاش
+self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => {
+            .then((cache) => {
                 console.log('Opened cache');
                 return cache.addAll(urlsToCache);
             })
     );
 });
 
-// اعتراض طلبات الشبكة (Fetch) لتقديم الموارد المخزنة مؤقتاً
-self.addEventListener('fetch', event => {
+// الجلب: يتم جلب الملفات من الكاش أولاً
+self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
-            .then(response => {
-                // تقديم الملف المخزن مؤقتاً إذا كان موجوداً
+            .then((response) => {
                 if (response) {
                     return response;
                 }
-                // وإلا، قم بطلب الملف من الشبكة
                 return fetch(event.request);
             })
+    );
+});
+
+// --- معالجة الإشعارات ---
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.action === 'showNotification') {
+        const options = {
+            body: event.data.body,
+            icon: '/192x192.png',
+            vibrate: [200, 100, 200],
+            tag: event.data.tag
+        };
+
+        // عرض الإشعار
+        event.waitUntil(
+            self.registration.showNotification(event.data.title, options)
+        );
+    }
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    // عند الضغط على الإشعار، يتم فتح التطبيق
+    event.waitUntil(
+        clients.matchAll({ type: 'window' }).then((clientList) => {
+            for (const client of clientList) {
+                if (client.url.includes(self.registration.scope) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow(self.registration.scope);
+            }
+        })
     );
 });
