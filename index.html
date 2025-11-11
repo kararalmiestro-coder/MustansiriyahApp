@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق قسم التاريخ</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json"> 
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="header-title">الجامعة المستنصرية - كلية التربية الأساسية - قسم التاريخ</div>
+        <div class="notification-icon">
+            <span class="alert-dot hidden"></span>
+            <span class="bell-icon" onclick="toggleNotifications()">🔔</span>
+            <div id="notification-dropdown" class="dropdown-content">
+                <p>لا توجد تنبيهات جديدة.</p>
+            </div>
+        </div>
+    </header>
+
+    <div id="alert-bar" class="alert-bar">
+        آخر تحديث للتنبيهات سيظهر هنا.
+    </div>
+
+    <main class="main-content-container">
+
+        <a href="schedule.html" class="feature-card">
+            <div class="card-icon">📅</div>
+            <div class="card-title">جدول المحاضرات الأسبوعي</div>
+        </a>
+
+        <a href="students.html" class="feature-card">
+            <div class="card-icon">👥</div>
+            <div class="card-title">قائمة أسماء الطلبة</div>
+        </a>
+
+        <a href="summaries.html" class="feature-card">
+            <div class="card-icon">📝</div>
+            <div class="card-title">ملخصات المحاضرات</div>
+        </a>
+
+    </main>
+    
+    <script src="app.js"></script>
+</body>
+</html>

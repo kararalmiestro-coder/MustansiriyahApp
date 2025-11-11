@@ -1,0 +1,118 @@
+/* إعادة تعيين بسيطة وخطوط */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+    direction: rtl; /* دعم اللغة العربية */
+    text-align: right;
+}
+
+/* تصميم شريط الرأس الثابت */
+.main-header {
+    background-color: #5d2528; /* لون الجامعة (عنابي/بني داكن) */
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky; /* لجعل الشريط ثابتاً في الأعلى */
+    top: 0;
+    z-index: 1000;
+}
+
+.header-title {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* تصميم أيقونة الجرس والإشعارات */
+.notification-icon {
+    position: relative;
+    cursor: pointer;
+}
+
+.bell-icon {
+    font-size: 24px;
+}
+
+.alert-dot {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 10px;
+    width: 10px;
+    background-color: #ff5722; /* نقطة حمراء */
+    border-radius: 50%;
+    display: block;
+}
+
+.alert-dot.hidden {
+    display: none;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    left: 0; /* يبدأ من اليمين بسبب dir: rtl */
+    background-color: #fff;
+    min-width: 250px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: right;
+    color: #333;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* شريط التنبيهات العاجلة */
+.alert-bar {
+    background-color: #ffeb3b; /* لون أصفر للتنبيه */
+    color: #333;
+    padding: 10px 20px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* حاوية الأقسام الرئيسية */
+.main-content-container {
+    padding: 20px;
+    display: grid;
+    /* تصميم شبكي متجاوب: عمودان على الشاشات الكبيرة وعمود واحد على الهواتف */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+/* تصميم حقول البطاقات (Cards) */
+.feature-card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    min-height: 150px;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+}

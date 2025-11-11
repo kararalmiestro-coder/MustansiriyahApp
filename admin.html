@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المشرف</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* إضافة ستايلات خاصة بصفحة الإدارة لتبسيط الواجهة */
+        .admin-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #5d2528;
+            border-bottom: 2px solid #5d2528;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #5d2528;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #431b1d;
+        }
+        #current-data {
+            border: 1px dashed #ccc;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-title">لوحة تحكم المحتوى</div>
+    </header>
+
+    <div class="admin-container">
+        <h1>إدارة محتوى التطبيق 📱</h1>
+        <p>استخدم هذه الواجهة لتعديل جميع البيانات مباشرةً من الهاتف.</p>
+        
+        <hr>
+        <h2>🚨 إدارة التنبيهات العاجلة</h2>
+        <form id="alerts-form">
+            <label for="alert-message">نص التنبيه:</label>
+            <textarea id="alert-message" rows="3" required></textarea>
+            <button type="submit">حفظ التنبيه الجديد</button>
+        </form>
+
+        <hr>
+        <h2>👥 إضافة أسماء الطلبة</h2>
+        <form id="students-form">
+            <label for="student-name">اسم الطالب الجديد:</label>
+            <input type="text" id="student-name" required>
+            <button type="submit">إضافة طالب</button>
+        </form>
+
+        <hr>
+        <h2>عرض البيانات الحالية (للتأكد)</h2>
+        <div id="current-data">
+            <p>سيتم تحميل البيانات المخزنة محلياً...</p>
+        </div>
+
+    </div>
+    
+    <script src="admin.js"></script>
+</body>
+</html>
