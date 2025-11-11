@@ -87,6 +87,7 @@ if ('serviceWorker' in navigator) {
     // إذا لم يكن هناك دعم، يتم الفحص بالرغم من أن الإشعارات قد لا تعمل
     window.addEventListener('load', checkScheduleAndNotify);
 }
-
+javascript function toggleNotifications() { Notification.requestPermission().then(function(permission) { if (permission === 'granted') { new Notification('تم تفعيل الإشعارات', {body: 'ستتلقى تنبيهات بأهم التحديثات.'}); console.log('Notification permission granted.'); } else { console.log('Notification permission denied.'); } }); }
 // --- 4. يمكنك هنا إضافة كود آخر لعرض البيانات على الواجهة (مثل عرض الجدول) ---
 // (الكود الحالي يركز على الإشعارات فقط، ويجب أن يكون كود عرض الواجهة موجوداً هنا أيضاً)
+
