@@ -1,11 +1,15 @@
-// --- Service Worker لإدارة الكاش والإشعارات ---
-
-const CACHE_NAME = 'Mustansiriyah-App-Cache-v1';
+const CACHE_NAME = 'Mustansiriyah-App-Cache-v2';
 const urlsToCache = [
     '/',
     '/index.html',
+    // === الصفحات المُضافة لحل مشكلة 404 ===
+    '/schedule.html',  
+    '/students.html',  
+    '/summaries.html', 
+    // ======================================
     '/style.css',
     '/admin.js',
+    '/app.js', // تم إضافة app.js
     '/data.json',
     '/manifest.json',
     '/192x192.png', 
@@ -21,6 +25,25 @@ self.addEventListener('install', (event) => {
                 return cache.addAll(urlsToCache);
             })
     );
+    self.skipWaiting(); 
+});
+
+// التنشيط: إزالة نسخ الكاش القديمة
+self.addEventListener('activate', (event) => {
+    const cacheWhitelist = [CACHE_NAME];
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheWhitelist.indexOf(cacheName) === -1) {
+                        console.log('Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+    return self.clients.claim(); 
 });
 
 // الجلب: يتم جلب الملفات من الكاش أولاً
@@ -46,8 +69,6 @@ self.addEventListener('message', (event) => {
             vibrate: [200, 100, 200],
             tag: event.data.tag
         };
-
-        // عرض الإشعار
         event.waitUntil(
             self.registration.showNotification(event.data.title, options)
         );
@@ -56,8 +77,6 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-
-    // عند الضغط على الإشعار، يتم فتح التطبيق
     event.waitUntil(
         clients.matchAll({ type: 'window' }).then((clientList) => {
             for (const client of clientList) {
