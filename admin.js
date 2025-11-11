@@ -1,122 +1,92 @@
-const LOCAL_STORAGE_KEY = 'mustansiriyah_history_data';
+// --- 1. طلب إذن الإشعارات من المستخدم عند تحميل التطبيق ---
+function requestNotificationPermission() {
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                console.log('Notification permission granted.');
+            } else {
+                console.log('Notification permission denied.');
+            }
+        });
+    }
+}
+requestNotificationPermission();
 
-document.addEventListener('DOMContentLoaded', () => {
-    // تحميل وعرض البيانات الحالية عند فتح الصفحة
-    loadCurrentData();
+// --- 2. وظيفة فحص الجدول وإرسال الإشعارات ---
+async function checkScheduleAndNotify() {
+    // التحقق من الإذن قبل المتابعة
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+        return; 
+    }
 
-    // 1. معالج إرسال نموذج التنبيهات
-    document.getElementById('alerts-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        handleAddAlert();
+    const today = new Date();
+    // الحصول على اسم اليوم بالعربية (يجب أن يتطابق مع data.json)
+    const dayNames = ['الاحد', 'الاثنين', 'الثلاثاء', 'الاربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const currentDayName = dayNames[today.getDay()];
+
+    try {
+        // جلب الجدول من data.json
+        const response = await fetch('data.json');
+        const data = await response.json();
+        const todaysSchedule = data.schedule[currentDayName];
+
+        if (!todaysSchedule || todaysSchedule.length === 0) return;
+
+        for (const lesson of todaysSchedule) {
+            // تجاهل فترات الاستراحة
+            if (lesson.subject === 'استراحة') continue;
+
+            // تحليل وقت بدء المحاضرة (مثل '8:30' من '8:30 - 9:15')
+            const startTimeStr = lesson.time.split(' - ')[0]; 
+            let [hours, minutes] = startTimeStr.split(':').map(Number);
+            
+            // إنشاء كائن Date لوقت بدء المحاضرة في هذا اليوم
+            const lectureTime = new Date(today);
+            lectureTime.setHours(hours, minutes, 0, 0);
+
+            // حساب وقت الإشعار (5 دقائق قبل المحاضرة)
+            const notificationTime = new Date(lectureTime.getTime() - (5 * 60000)); // طرح 5 دقائق
+            
+            // حساب الفرق الزمني بين الآن ووقت الإشعار (بالدقائق)
+            const timeDifference = Math.floor((notificationTime.getTime() - today.getTime()) / 60000); 
+
+            // إذا كان وقت الإشعار في المستقبل وخلال الـ 15 دقيقة القادمة (للتأكد من عدم إرسال إشعارات قديمة)
+            if (timeDifference >= 0 && timeDifference <= 15) {
+                const title = `تنبيه: محاضرة قادمة!`;
+                const body = `${lesson.subject} (أ.د. ${lesson.instructor}) ستبدأ بعد ${timeDifference} دقيقة.`;
+                
+                // إرسال رسالة إلى Service Worker لعرض الإشعار
+                if (navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        action: 'showNotification',
+                        title: title,
+                        body: body,
+                        tag: `lecture-${currentDayName}-${startTimeStr}` 
+                    });
+                }
+            } 
+        }
+    } catch (error) {
+        console.error('فشل في فحص الجدول لإرسال الإشعارات:', error);
+    }
+}
+
+
+// --- 3. ضمان تسجيل Service Worker ثم فحص الجدول ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').then(registration => {
+            console.log('Service Worker registered.');
+            // فحص الجدول وإرسال الإشعارات بمجرد تفعيل Service Worker
+            checkScheduleAndNotify(); 
+        }).catch(error => {
+            console.error('Service Worker registration failed:', error);
+        });
     });
-
-    // 2. معالج إرسال نموذج الطلبة
-    document.getElementById('students-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        handleAddStudent();
-    });
-});
-
-/**
- * دالة قراءة البيانات من localStorage أو إنشاء هيكل جديد
- */
-function getLocalData() {
-    const dataString = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (dataString) {
-        return JSON.parse(dataString);
-    }
-    // هيكل البيانات الافتراضي إذا لم يكن هناك شيء محفوظ
-    return {
-        version: 0,
-        lastSync: 0,
-        alerts: [],
-        schedule: [],
-        students: [],
-        summaries: []
-    };
+} else {
+    // إذا لم يكن هناك دعم، يتم الفحص بالرغم من أن الإشعارات قد لا تعمل
+    window.addEventListener('load', checkScheduleAndNotify);
 }
 
-/**
- * دالة لحفظ البيانات المحدثة في localStorage
- */
-function saveLocalData(data) {
-    // زيادة رقم الإصدار (Version) لإجبار التطبيق على المزامنة عند الاتصال بالإنترنت
-    data.version += 1; 
-    data.lastSync = Date.now();
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-    alert('تم حفظ البيانات بنجاح في جهازك!');
-    loadCurrentData(); // إعادة تحميل العرض
-}
-
-/**
- * 1. معالج إضافة تنبيه جديد
- */
-function handleAddAlert() {
-    const message = document.getElementById('alert-message').value.trim();
-    if (!message) return;
-
-    const data = getLocalData();
-    const newAlert = {
-        id: Date.now(),
-        title: "تنبيه جديد",
-        message: message,
-        date: new Date().toLocaleDateString('ar-IQ') // تاريخ اليوم
-    };
-
-    // إضافة التنبيه في بداية المصفوفة لضمان عرضه أولاً
-    data.alerts.unshift(newAlert);
-
-    // إذا أردت فقط الاحتفاظ بـ 10 تنبيهات مثلاً
-    if (data.alerts.length > 10) {
-        data.alerts.pop();
-    }
-
-    saveLocalData(data);
-    document.getElementById('alert-message').value = '';
-}
-
-/**
- * 2. معالج إضافة طالب جديد
- */
-function handleAddStudent() {
-    const studentName = document.getElementById('student-name').value.trim();
-    if (!studentName) return;
-
-    const data = getLocalData();
-    
-    // منع التكرار
-    if (!data.students.includes(studentName)) {
-        data.students.push(studentName);
-        // ترتيب القائمة أبجدياً
-        data.students.sort(); 
-    } else {
-        alert('هذا الاسم موجود بالفعل.');
-        return;
-    }
-
-    saveLocalData(data);
-    document.getElementById('student-name').value = '';
-}
-
-/**
- * دالة عرض البيانات الحالية المخزنة محلياً
- */
-function loadCurrentData() {
-    const data = getLocalData();
-    const currentDataDiv = document.getElementById('current-data');
-    
-    currentDataDiv.innerHTML = `
-        <p><strong>الإصدار الحالي:</strong> ${data.version}</p>
-        <p><strong>آخر حفظ:</strong> ${new Date(data.lastSync).toLocaleString('ar-IQ')}</p>
-        <hr>
-        <h4>التنبيهات (${data.alerts.length}):</h4>
-        <ul>
-            ${data.alerts.map(a => `<li>[${a.date}] ${a.message}</li>`).join('')}
-        </ul>
-        <hr>
-        <h4>أسماء الطلبة (${data.students.length}):</h4>
-        <p>${data.students.slice(0, 5).join('، ')} ...</p>
-    `;
-    
-    // هنا يجب عليك إضافة المزيد من المنطق لعرض وتحرير بيانات الجدول والملخصات
-}
+// --- 4. يمكنك هنا إضافة كود آخر لعرض البيانات على الواجهة (مثل عرض الجدول) ---
+// (الكود الحالي يركز على الإشعارات فقط، ويجب أن يكون كود عرض الواجهة موجوداً هنا أيضاً)
